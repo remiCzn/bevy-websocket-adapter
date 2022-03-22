@@ -3,11 +3,9 @@ use ::bevy::prelude::*;
 use bevy_websocket_adapter::{
     bevy::{WebSocketServer, WsMessageInserter},
     impl_message_type,
-    shared::ConnectionHandle,
     server::Server,
+    shared::ConnectionHandle,
 };
-use log::info;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -31,12 +29,16 @@ fn respond_to_pings(mut evs: EventReader<(ConnectionHandle, Ping)>, srv: Res<Ser
 }
 
 fn main() {
-    simple_logger::init_with_level(log::Level::Debug).unwrap();
-    App::build()
+    App::new()
+        .insert_resource(bevy::log::LogSettings {
+            level: bevy::log::Level::DEBUG,
+            ..Default::default()
+        })
+        .add_plugin(bevy::log::LogPlugin)
         .add_plugins(MinimalPlugins)
         .add_plugin(WebSocketServer::default())
-        .add_startup_system(start_listen.system())
+        .add_startup_system(start_listen)
         .add_message_type::<Ping>()
-        .add_system(respond_to_pings.system())
+        .add_system(respond_to_pings)
         .run();
 }

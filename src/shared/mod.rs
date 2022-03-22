@@ -1,10 +1,10 @@
+mod event;
 mod handle;
 mod router;
-mod event;
 
+pub use event::*;
 pub use handle::ConnectionHandle;
 pub use router::*;
-pub use event::*;
 
 #[macro_export]
 macro_rules! impl_message_type {

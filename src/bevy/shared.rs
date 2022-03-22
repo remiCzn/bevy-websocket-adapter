@@ -1,8 +1,11 @@
-use crate::shared::{ConnectionHandle, Enveloppe, GenericParser, MessageType, NetworkEvent};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
 use bevy::prelude::*;
-use log::warn;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+
+use crate::shared::{ConnectionHandle, Enveloppe, GenericParser, MessageType, NetworkEvent};
 
 pub(crate) fn handle_network_events(
     mut events: ResMut<Vec<NetworkEvent>>,
@@ -58,14 +61,13 @@ pub trait WsMessageInserter {
         T: MessageType + 'static;
 }
 
-impl WsMessageInserter for AppBuilder {
+impl WsMessageInserter for App {
     fn add_message_type<T>(&mut self) -> &mut Self
     where
         T: MessageType + 'static,
     {
         self.add_event::<(ConnectionHandle, T)>();
         let router = self
-            .app
             .world
             .get_resource::<Arc<Mutex<GenericParser>>>()
             .expect("cannot register message before WebSocketServer initialization");

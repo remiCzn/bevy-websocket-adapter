@@ -1,6 +1,6 @@
+use std::{any::Any, collections::HashMap};
+
 use serde::{Deserialize, Serialize};
-use std::any::Any;
-use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Enveloppe {

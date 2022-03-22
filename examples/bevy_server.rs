@@ -1,13 +1,12 @@
 extern crate bevy_websocket_adapter;
 use ::bevy::prelude::*;
+use bevy::diagnostic::DiagnosticsPlugin;
 use bevy_websocket_adapter::{
     bevy::{WebSocketServer, WsMessageInserter},
     impl_message_type,
-    shared::ConnectionHandle,
     server::Server,
+    shared::ConnectionHandle,
 };
-use log::info;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,7 +16,7 @@ struct DummyEvent {
 impl_message_type!(DummyEvent, "dummy");
 
 fn start_listen(mut ws: ResMut<Server>) {
-    ws.listen("0.0.0.0:12345")
+    ws.listen("0.0.0.0:9023")
         .expect("failed to start websocket server");
 }
 
@@ -28,12 +27,17 @@ fn listen_for_dummy(mut evs: EventReader<(ConnectionHandle, DummyEvent)>) {
 }
 
 fn main() {
-    simple_logger::init_with_level(log::Level::Debug).unwrap();
-    App::build()
+    App::new()
+        .insert_resource(bevy::log::LogSettings {
+            level: bevy::log::Level::DEBUG,
+            ..Default::default()
+        })
+        .add_plugin(bevy::log::LogPlugin)
+        .add_plugin(DiagnosticsPlugin)
         .add_plugins(MinimalPlugins)
         .add_plugin(WebSocketServer::default())
-        .add_startup_system(start_listen.system())
+        .add_startup_system(start_listen)
         .add_message_type::<DummyEvent>()
-        .add_system(listen_for_dummy.system())
+        .add_system(listen_for_dummy)
         .run();
 }

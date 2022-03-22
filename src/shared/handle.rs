@@ -16,4 +16,3 @@ impl ConnectionHandle {
         self.uuid
     }
 }
-

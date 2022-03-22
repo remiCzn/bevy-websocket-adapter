@@ -1,28 +1,25 @@
-use crate::shared::{MessageType, SendEnveloppe};
-use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
-use futures::{join, pending};
-use futures_util::{future as ufuture, stream::TryStreamExt, SinkExt, StreamExt};
-use log::{debug, trace, warn};
-use serde::Serialize;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
 };
-use uuid::Uuid;
+
+use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
+use futures::{join, pending};
+use futures_util::{future as ufuture, stream::TryStreamExt, SinkExt, StreamExt};
+use serde::Serialize;
 use thiserror::Error as TError;
 use tokio::{
     net::{TcpListener, ToSocketAddrs},
     runtime::Runtime,
     task::JoinHandle,
 };
-use crate::shared::{
-    NetworkEvent,
-    ConnectionHandle
-};
+use tracing::{debug, trace, warn};
+use uuid::Uuid;
+
+use crate::shared::{ConnectionHandle, MessageType, NetworkEvent, SendEnveloppe};
 
 #[derive(TError, Debug)]
 pub enum ServerConfigError {}
-
 
 pub struct Server {
     rt: Arc<Runtime>,
@@ -286,7 +283,12 @@ impl Server {
             clients = map.keys().cloned().collect::<Vec<Uuid>>();
         }
         for c in clients {
-            self.send_raw_message(&ConnectionHandle { uuid: c }, payload.clone());
+            self.send_raw_message(
+                &ConnectionHandle {
+                    uuid: c,
+                },
+                payload.clone(),
+            );
         }
     }
 }

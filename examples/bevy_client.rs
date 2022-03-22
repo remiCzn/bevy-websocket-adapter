@@ -2,10 +2,9 @@ extern crate bevy_websocket_adapter;
 use ::bevy::prelude::*;
 use bevy_websocket_adapter::{
     bevy::{WebSocketClient, WsMessageInserter},
-    impl_message_type,
     client::Client,
+    impl_message_type,
 };
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -18,20 +17,23 @@ fn connect_to_server(mut ws: ResMut<Client>) {
     ws.connect("ws://127.0.0.1:12345".to_string());
 }
 
-fn send_dummies(
-    client: Res<Client>
-
-) {
-    client.send_message(&DummyEvent{a: 2});
+fn send_dummies(client: Res<Client>) {
+    client.send_message(&DummyEvent {
+        a: 2,
+    });
 }
 
 fn main() {
-    simple_logger::init_with_level(log::Level::Debug).unwrap();
-    App::build()
+    App::new()
+        .insert_resource(bevy::log::LogSettings {
+            level: bevy::log::Level::DEBUG,
+            ..Default::default()
+        })
+        .add_plugin(bevy::log::LogPlugin)
         .add_plugins(MinimalPlugins)
         .add_plugin(WebSocketClient::default())
-        .add_startup_system(connect_to_server.system())
+        .add_startup_system(connect_to_server)
         .add_message_type::<DummyEvent>()
-        .add_system(send_dummies.system())
+        .add_system(send_dummies)
         .run();
 }

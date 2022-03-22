@@ -1,15 +1,20 @@
-use crate::shared::{ConnectionHandle, Enveloppe, GenericParser, NetworkEvent};
-use crate::client::Client;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
 use bevy::prelude::*;
-use log::{trace, warn};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+
+use crate::{
+    client::Client,
+    shared::{ConnectionHandle, Enveloppe, GenericParser, NetworkEvent},
+};
 
 #[derive(Default, Debug)]
 pub struct WebSocketClient {}
 
 impl Plugin for WebSocketClient {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         let client = Client::new();
         let router = Arc::new(Mutex::new(GenericParser::new()));
         let map = HashMap::<String, Vec<(ConnectionHandle, Enveloppe)>>::new();
@@ -61,4 +66,3 @@ fn consume_messages(
         }
     }
 }
-
