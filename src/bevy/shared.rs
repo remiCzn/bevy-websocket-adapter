@@ -14,30 +14,32 @@ pub(crate) fn handle_network_events(
 }
 
 pub(crate) fn add_message_consumer<T>(
-    key: Local<String>,
-    mut hmap: ResMut<Connections>,
-    router: Res<Router>,
-    mut queue: EventWriter<(ConnectionHandle, T)>,
-) where
+    key: String,
+) -> impl FnMut(ResMut<Connections>, Res<Router>, EventWriter<(ConnectionHandle, T)>)
+where
     T: Send + Sync + 'static,
 {
-    if let Some(values) = hmap.0.remove(&*key) {
-        for (handle, v) in values {
-            let enveloppe = router.0.lock().unwrap().parse_enveloppe(&v);
-            match enveloppe {
-                Ok(dat) => match GenericParser::try_into_concrete_type::<T>(dat) {
-                    Ok(msg) => {
-                        queue.send((handle, msg));
-                    }
+    move |mut hmap: ResMut<Connections>,
+          router: Res<Router>,
+          mut queue: EventWriter<(ConnectionHandle, T)>| {
+        if let Some(values) = hmap.0.remove(&*key) {
+            for (handle, v) in values {
+                let enveloppe = router.0.lock().unwrap().parse_enveloppe(&v);
+                match enveloppe {
+                    Ok(dat) => match GenericParser::try_into_concrete_type::<T>(dat) {
+                        Ok(msg) => {
+                            queue.send((handle, msg));
+                        }
+                        Err(e) => {
+                            warn!("failed to downcast : {}", e);
+                        }
+                    },
                     Err(e) => {
-                        warn!("failed to downcast : {}", e);
+                        warn!("failed to parse type enveloppe : {}", e);
+                        continue;
                     }
-                },
-                Err(e) => {
-                    warn!("failed to parse type enveloppe : {}", e);
-                    continue;
-                }
-            };
+                };
+            }
         }
     }
 }
@@ -71,9 +73,7 @@ impl WsMessageInserter for App {
             .0;
         router.lock().unwrap().insert_type::<T>();
 
-        self.add_system(add_message_consumer::<T>.system().config(|params| {
-            params.0 = Some(T::message_type().to_string());
-        }));
+        self.add_system(add_message_consumer::<T>(T::message_type().to_string()));
         self
     }
 }
