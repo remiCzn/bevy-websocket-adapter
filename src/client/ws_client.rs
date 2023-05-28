@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use bevy::log::warn;
+use bevy::{log::warn, prelude::Resource};
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
 use futures::{join, SinkExt, StreamExt};
 use serde::Serialize;
@@ -10,6 +10,7 @@ use tracing::error;
 
 use crate::shared::{ConnectionHandle, MessageType, NetworkEvent, SendEnveloppe};
 
+#[derive(Resource)]
 pub struct Client {
     rt: Arc<Runtime>,
     handle: Option<JoinHandle<()>>,

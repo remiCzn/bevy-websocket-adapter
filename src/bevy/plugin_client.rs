@@ -7,7 +7,10 @@ use bevy::prelude::*;
 
 use crate::{
     client::Client,
-    shared::{ConnectionHandle, Enveloppe, GenericParser, NetworkEvent},
+    shared::{
+        ConnectionHandle, Connections, Enveloppe, GenericParser, NetworkEvent, NetworkEvents,
+        Router,
+    },
 };
 
 #[derive(Default, Debug)]
@@ -20,20 +23,20 @@ impl Plugin for WebSocketClient {
         let map = HashMap::<String, Vec<(ConnectionHandle, Enveloppe)>>::new();
         let network_events = Vec::<NetworkEvent>::new();
         app.insert_resource(client)
-            .insert_resource(router)
-            .insert_resource(map)
-            .insert_resource(network_events)
+            .insert_resource(Router(router))
+            .insert_resource(Connections(map))
+            .insert_resource(NetworkEvents(network_events))
             .add_event::<NetworkEvent>()
             .add_stage_before(CoreStage::First, "network", SystemStage::single_threaded())
-            .add_system_to_stage("network", consume_messages.system())
-            .add_system_to_stage("network", super::shared::handle_network_events.system());
+            .add_system_to_stage("network", consume_messages)
+            .add_system_to_stage("network", super::shared::handle_network_events);
     }
 }
 
 fn consume_messages(
     client: Res<Client>,
-    mut hmap: ResMut<HashMap<String, Vec<(ConnectionHandle, Enveloppe)>>>,
-    mut network_events: ResMut<Vec<NetworkEvent>>,
+    mut hmap: ResMut<Connections>,
+    mut network_events: ResMut<NetworkEvents>,
 ) {
     if !client.is_running() {
         return;
@@ -47,13 +50,13 @@ fn consume_messages(
                     std::io::Cursor::new(raw_ev),
                 ) {
                     let tp = enveloppe.message_type.to_string();
-                    let mut v = if let Some(x) = hmap.remove(&tp) {
+                    let mut v = if let Some(x) = hmap.0.remove(&tp) {
                         x
                     } else {
                         Vec::new()
                     };
                     v.push((handle, enveloppe.clone()));
-                    hmap.insert(tp, v);
+                    hmap.0.insert(tp, v);
                 } else {
                     warn!("failed to deserialize message from {:?}", handle);
                     continue;
@@ -61,7 +64,7 @@ fn consume_messages(
             }
             other => {
                 trace!("received network event: {:?}", other);
-                network_events.push(other);
+                network_events.0.push(other);
             }
         }
     }

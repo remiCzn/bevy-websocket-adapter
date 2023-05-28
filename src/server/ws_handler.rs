@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use bevy::prelude::Resource;
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
 use futures::{join, pending};
 use futures_util::{future as ufuture, stream::TryStreamExt, SinkExt, StreamExt};
@@ -21,6 +22,7 @@ use crate::shared::{ConnectionHandle, MessageType, NetworkEvent, SendEnveloppe};
 #[derive(TError, Debug)]
 pub enum ServerConfigError {}
 
+#[derive(Resource)]
 pub struct Server {
     rt: Arc<Runtime>,
     server_handle: Option<JoinHandle<()>>,
@@ -283,12 +285,7 @@ impl Server {
             clients = map.keys().cloned().collect::<Vec<Uuid>>();
         }
         for c in clients {
-            self.send_raw_message(
-                &ConnectionHandle {
-                    uuid: c,
-                },
-                payload.clone(),
-            );
+            self.send_raw_message(&ConnectionHandle { uuid: c }, payload.clone());
         }
     }
 }

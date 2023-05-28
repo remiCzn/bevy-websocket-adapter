@@ -1,32 +1,29 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
-
 use bevy::prelude::*;
 
-use crate::shared::{ConnectionHandle, Enveloppe, GenericParser, MessageType, NetworkEvent};
+use crate::shared::{
+    ConnectionHandle, Connections, GenericParser, MessageType, NetworkEvent, NetworkEvents, Router,
+};
 
 pub(crate) fn handle_network_events(
-    mut events: ResMut<Vec<NetworkEvent>>,
+    mut events: ResMut<NetworkEvents>,
     mut sink: EventWriter<NetworkEvent>,
 ) {
-    for ev in events.drain(..) {
+    for ev in events.0.drain(..) {
         sink.send(ev);
     }
 }
 
 pub(crate) fn add_message_consumer<T>(
     key: Local<String>,
-    mut hmap: ResMut<HashMap<String, Vec<(ConnectionHandle, Enveloppe)>>>,
-    router: Res<Arc<Mutex<GenericParser>>>,
+    mut hmap: ResMut<Connections>,
+    router: Res<Router>,
     mut queue: EventWriter<(ConnectionHandle, T)>,
 ) where
     T: Send + Sync + 'static,
 {
-    if let Some(values) = hmap.remove(&*key) {
+    if let Some(values) = hmap.0.remove(&*key) {
         for (handle, v) in values {
-            let enveloppe = router.lock().unwrap().parse_enveloppe(&v);
+            let enveloppe = router.0.lock().unwrap().parse_enveloppe(&v);
             match enveloppe {
                 Ok(dat) => match GenericParser::try_into_concrete_type::<T>(dat) {
                     Ok(msg) => {
@@ -69,8 +66,9 @@ impl WsMessageInserter for App {
         self.add_event::<(ConnectionHandle, T)>();
         let router = self
             .world
-            .get_resource::<Arc<Mutex<GenericParser>>>()
-            .expect("cannot register message before WebSocketServer initialization");
+            .get_resource::<Router>()
+            .expect("cannot register message before WebSocketServer initialization")
+            .0;
         router.lock().unwrap().insert_type::<T>();
 
         self.add_system(add_message_consumer::<T>.system().config(|params| {
