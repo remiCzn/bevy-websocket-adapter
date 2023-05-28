@@ -1,10 +1,5 @@
-use std::{
-    any::Any,
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{any::Any, collections::HashMap};
 
-use bevy::prelude::Resource;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -83,6 +78,3 @@ impl GenericParser {
         }
     }
 }
-
-#[derive(Resource)]
-pub struct Router(pub Arc<Mutex<GenericParser>>);

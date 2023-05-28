@@ -1,9 +1,11 @@
 mod event;
 mod handle;
+mod resources;
 mod router;
 
 pub use event::*;
 pub use handle::ConnectionHandle;
+pub use resources::*;
 pub use router::*;
 
 #[macro_export]
