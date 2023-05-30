@@ -252,13 +252,12 @@ impl Server {
         handle: &ConnectionHandle,
         msg: tokio_tungstenite::tungstenite::Message,
     ) {
-        let client;
-        {
+        let client = {
             let map = self.sessions_sinks.lock().unwrap();
-            client = map.get(&handle.id()).cloned();
-        }
+            map.get(&handle.id()).cloned()
+        };
         if let Some(channel) = client {
-            if let Err(e) = channel.send(msg) {
+            if let Err(e) = channel.send(msg.clone()) {
                 warn!(
                     "failed to forward message to client {:?} sink: {:?}",
                     handle, e

@@ -1,6 +1,6 @@
 extern crate bevy_websocket_adapter;
 use ::bevy::prelude::*;
-use bevy::diagnostic::DiagnosticsPlugin;
+use bevy::{diagnostic::DiagnosticsPlugin, log::LogPlugin};
 use bevy_websocket_adapter::{
     bevy::{WebSocketServer, WsMessageInserter},
     impl_message_type,
@@ -9,7 +9,7 @@ use bevy_websocket_adapter::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct DummyEvent {
     a: u32,
 }
@@ -28,11 +28,10 @@ fn listen_for_dummy(mut evs: EventReader<(ConnectionHandle, DummyEvent)>) {
 
 fn main() {
     App::new()
-        .insert_resource(bevy::log::LogSettings {
+        .add_plugin(LogPlugin {
             level: bevy::log::Level::DEBUG,
             ..Default::default()
         })
-        .add_plugin(bevy::log::LogPlugin)
         .add_plugin(DiagnosticsPlugin)
         .add_plugins(MinimalPlugins)
         .add_plugin(WebSocketServer::default())

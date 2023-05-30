@@ -8,7 +8,7 @@ use bevy::prelude::Resource;
 use super::{ConnectionHandle, Enveloppe, GenericParser, NetworkEvent};
 
 #[derive(Resource)]
-pub struct Connections(pub HashMap<String, Vec<(ConnectionHandle, Enveloppe)>>);
+pub struct MessageBuffer(pub HashMap<String, Vec<(ConnectionHandle, Enveloppe)>>);
 
 #[derive(Resource)]
 pub struct NetworkEvents(pub Vec<NetworkEvent>);

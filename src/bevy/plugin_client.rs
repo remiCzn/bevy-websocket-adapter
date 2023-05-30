@@ -8,10 +8,14 @@ use bevy::prelude::*;
 use crate::{
     client::Client,
     shared::{
-        ConnectionHandle, Connections, Enveloppe, GenericParser, NetworkEvent, NetworkEvents,
+        ConnectionHandle, Enveloppe, GenericParser, MessageBuffer, NetworkEvent, NetworkEvents,
         Router,
     },
 };
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+#[system_set(base)]
+pub struct NetworkStage;
 
 #[derive(Default, Debug)]
 pub struct WebSocketClient {}
@@ -24,18 +28,19 @@ impl Plugin for WebSocketClient {
         let network_events = Vec::<NetworkEvent>::new();
         app.insert_resource(client)
             .insert_resource(Router(router))
-            .insert_resource(Connections(map))
+            .insert_resource(MessageBuffer(map))
             .insert_resource(NetworkEvents(network_events))
             .add_event::<NetworkEvent>()
-            .add_stage_before(CoreStage::First, "network", SystemStage::single_threaded())
-            .add_system_to_stage("network", consume_messages)
-            .add_system_to_stage("network", super::shared::handle_network_events);
+            .configure_set(NetworkStage.before(CoreSet::First))
+            .add_systems(
+                (consume_messages, super::shared::handle_network_events).in_base_set(NetworkStage),
+            );
     }
 }
 
 fn consume_messages(
     client: Res<Client>,
-    mut hmap: ResMut<Connections>,
+    mut hmap: ResMut<MessageBuffer>,
     mut network_events: ResMut<NetworkEvents>,
 ) {
     if !client.is_running() {

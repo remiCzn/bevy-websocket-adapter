@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 
 use crate::shared::{
-    ConnectionHandle, Connections, GenericParser, MessageType, NetworkEvent, NetworkEvents, Router,
+    ConnectionHandle, GenericParser, MessageBuffer, MessageType, NetworkEvent, NetworkEvents,
+    Router,
 };
 
 pub(crate) fn handle_network_events(
@@ -15,11 +16,11 @@ pub(crate) fn handle_network_events(
 
 pub(crate) fn add_message_consumer<T>(
     key: String,
-) -> impl FnMut(ResMut<Connections>, Res<Router>, EventWriter<(ConnectionHandle, T)>)
+) -> impl FnMut(ResMut<MessageBuffer>, Res<Router>, EventWriter<(ConnectionHandle, T)>)
 where
     T: Send + Sync + 'static,
 {
-    move |mut hmap: ResMut<Connections>,
+    move |mut hmap: ResMut<MessageBuffer>,
           router: Res<Router>,
           mut queue: EventWriter<(ConnectionHandle, T)>| {
         if let Some(values) = hmap.0.remove(&*key) {
@@ -69,9 +70,8 @@ impl WsMessageInserter for App {
         let router = self
             .world
             .get_resource::<Router>()
-            .expect("cannot register message before WebSocketServer initialization")
-            .0;
-        router.lock().unwrap().insert_type::<T>();
+            .expect("cannot register message before WebSocketServer initialization");
+        router.0.lock().unwrap().insert_type::<T>();
 
         self.add_system(add_message_consumer::<T>(T::message_type().to_string()));
         self

@@ -1,5 +1,6 @@
 extern crate bevy_websocket_adapter;
 use ::bevy::prelude::*;
+use bevy::log::LogPlugin;
 use bevy_websocket_adapter::{
     bevy::{WebSocketServer, WsMessageInserter},
     impl_message_type,
@@ -30,11 +31,10 @@ fn respond_to_pings(mut evs: EventReader<(ConnectionHandle, Ping)>, srv: Res<Ser
 
 fn main() {
     App::new()
-        .insert_resource(bevy::log::LogSettings {
+        .add_plugin(LogPlugin {
             level: bevy::log::Level::DEBUG,
             ..Default::default()
         })
-        .add_plugin(bevy::log::LogPlugin)
         .add_plugins(MinimalPlugins)
         .add_plugin(WebSocketServer::default())
         .add_startup_system(start_listen)
