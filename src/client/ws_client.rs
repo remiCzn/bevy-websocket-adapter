@@ -88,8 +88,8 @@ impl Client {
                             // TODO: REPLACE SPINLOCK !
                             continue;
                         }
-                        Err(e) => {
-                            warn!("failed to forward message to sink: {}", e);
+                        Err(TryRecvError::Disconnected) => {
+                            return;
                         }
                         Ok(ev) => {
                             if let Err(e) = write.send(ev).await {
@@ -110,10 +110,7 @@ impl Client {
         if let Some(channel) = &self.rx {
             match channel.try_recv() {
                 Err(TryRecvError::Empty) => None,
-                Err(e) => {
-                    warn!("failed to forward message to sink: {}", e);
-                    None
-                }
+                Err(TryRecvError::Disconnected) => None,
                 Ok(ev) => Some(ev),
             }
         } else {
