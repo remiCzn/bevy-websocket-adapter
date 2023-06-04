@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 
 use bevy::{log::warn, prelude::Resource};
 use crossbeam_channel::{unbounded, Receiver, Sender, TryRecvError};
@@ -41,6 +41,19 @@ impl Client {
             rx: None,
             tx: None,
         }
+    }
+
+    pub fn disconnect(&mut self) {
+        if let Some(h) = &self.handle {
+            self.send_raw_message(tungstenite::Message::Close(Some(
+                tungstenite::protocol::CloseFrame {
+                    code: tungstenite::protocol::frame::coding::CloseCode::Normal,
+                    reason: Cow::Borrowed(""),
+                },
+            )));
+            h.abort();
+        }
+        self.handle = None;
     }
 
     pub fn connect(&mut self, endpoint: String) {
